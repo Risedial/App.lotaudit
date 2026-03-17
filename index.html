@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0f0f0f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <title>Lot Walk — Sturgeon Dodge</title>
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --surface-2: #252525;
+      --accent: #f5a623;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --text: #ffffff;
+      --text-muted: #9ca3af;
+      --border: #333333;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --fs-base: 16px;
+    }
+    body.hc { --bg:#000; --surface:#0a0a0a; --surface-2:#111; --text-muted:#ccc; --border:#444; --fs-base:20px; }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:var(--fs-base);line-height:1.5;min-height:100vh;overflow-x:hidden;}
+    #app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;}
+    .screen{min-height:100vh;animation:fadeIn 200ms ease;}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+```
+/* Offline banner */
+.offline-banner{position:fixed;top:0;left:0;right:0;background:var(--warning);color:#000;text-align:center;padding:8px 16px;font-size:13px;font-weight:700;z-index:2000;display:none;max-width:480px;margin:0 auto;}
+.offline-banner.show{display:block;}
+
+/* Header */
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.hdr-left{display:flex;flex-direction:column;}
+.hdr-title{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);}
+.hdr-sub{font-size:12px;color:var(--text-muted);margin-top:1px;}
+.hdr-right{display:flex;align-items:center;gap:12px;}
+.hdr-count{font-size:15px;font-weight:800;color:var(--accent);}
+.icon-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:6px;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;min-width:36px;min-height:36px;}
+
+/* Content */
+.content{padding:20px 16px;}
+.pb-safe{padding-bottom:96px;}
+
+/* Buttons */
+.btn{display:block;width:100%;min-height:52px;padding:14px 20px;border:none;border-radius:10px;font-family:var(--font);font-size:var(--fs-base);font-weight:700;cursor:pointer;text-align:center;transition:opacity 120ms,transform 100ms;-webkit-user-select:none;user-select:none;letter-spacing:.02em;}
+.btn:active{transform:scale(.98);}
+.btn-primary{background:var(--accent);color:#000;}
+.btn-secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border);}
+.btn-danger{background:var(--error);color:#fff;}
+.btn-ghost{background:transparent;color:var(--text-muted);border:1px solid var(--border);}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important;}
+.btn+.btn{margin-top:10px;}
+
+/* Start screen */
+.start-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 24px;text-align:center;}
+.start-logo{font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
+.start-title{font-size:30px;font-weight:900;margin-bottom:6px;letter-spacing:-.02em;}
+.start-date{font-size:15px;color:var(--text-muted);margin-bottom:52px;}
+.start-screen .btn{max-width:280px;}
+
+/* VIN input */
+.vin-wrap{position:relative;margin-bottom:14px;}
+.vin-input{width:100%;min-height:68px;background:var(--surface-2);border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:'Courier New',monospace;font-size:32px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;padding:12px 56px 12px 16px;text-align:center;-webkit-appearance:none;transition:border-color 150ms;}
+.vin-input:focus{outline:none;border-color:var(--accent);}
+.vin-counter{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text-muted);font-weight:700;}
+
+/* Vehicle rows */
+.vehicles-list{margin-bottom:8px;}
+.v-row{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;}
+.v-vin{font-family:'Courier New',monospace;font-size:15px;font-weight:800;letter-spacing:.1em;flex:1;}
+.v-badge{font-size:10px;font-weight:700;padding:3px 7px;border-radius:4px;background:var(--surface-2);color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;}
+.sync-icon{font-size:16px;min-width:20px;text-align:right;}
+.si-ok{color:var(--success);}
+.si-pend{color:var(--warning);}
+.si-fail{color:var(--error);}
+
+/* Fixed bottom bar */
+.fixed-bottom{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;padding:10px 16px 20px;background:linear-gradient(to top,var(--bg) 55%,transparent);}
+
+/* Section label */
+.sec-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--text-muted);margin-bottom:10px;}
+
+/* Section block */
+.sblock{background:var(--surface);border:2px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color 200ms;}
+.sblock.answered{border-color:rgba(34,197,94,.4);}
+.sblock.flagged-zone{border-color:rgba(245,158,11,.5);}
+.sblock-head{padding:15px 15px 0;cursor:default;}
+.sblock-title{font-size:15px;font-weight:800;}
+.sblock-ctx{font-size:12px;color:var(--text-muted);margin-top:3px;}
+.sblock-body{padding:12px 15px 15px;}
+.sblock-collapsed{padding:13px 15px;display:flex;align-items:center;gap:10px;cursor:default;}
+.sc-label{font-size:13px;color:var(--text-muted);flex:0 0 auto;}
+.sc-answer{font-size:13px;font-weight:700;color:var(--success);flex:1;}
+.edit-btn{background:none;border:none;color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);padding:4px 8px;min-height:36px;}
+
+/* Options */
+.opt-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+.opt{display:flex;align-items:center;min-height:48px;padding:11px 13px;background:var(--surface-2);border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color 150ms,background 150ms;gap:11px;}
+.opt.sel{border-color:var(--accent);background:rgba(245,166,35,.07);}
+.rdot{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;transition:all 150ms;display:flex;align-items:center;justify-content:center;}
+.opt.sel .rdot{background:var(--accent);border-color:var(--accent);}
+.rdot::after{content:'';width:8px;height:8px;border-radius:50%;background:#000;display:none;}
+.opt.sel .rdot::after{display:block;}
+.opt-label{font-size:14px;font-weight:600;flex:1;line-height:1.3;}
+.other-input{width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;padding:10px 12px;margin-top:8px;min-height:44px;}
+.other-input:focus{outline:none;border-color:var(--accent);}
+.sub-input{width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;padding:10px 12px;margin-top:8px;min-height:44px;}
+.sub-input:focus{outline:none;border-color:var(--accent);}
+
+/* Warning banner in section */
+.warn-banner{background:rgba(245,158,11,.12);border:1px solid var(--warning);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--warning);margin-top:10px;font-weight:600;}
+
+/* Section footer (note + photo) */
+.sec-footer{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.sec-footer-btn{display:inline-flex;align-items:center;gap:6px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-muted);font-family:var(--font);font-size:12px;font-weight:600;padding:7px 11px;cursor:pointer;min-height:36px;}
+.sec-footer-btn.has-content{border-color:var(--success);color:var(--success);}
+.note-ta{width:100%;min-height:72px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;padding:11px 12px;resize:none;margin-top:8px;}
+.note-ta:focus{outline:none;border-color:var(--accent);}
+.photo-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.pthumb{position:relative;width:72px;height:72px;flex-shrink:0;}
+.pthumb img{width:72px;height:72px;object-fit:cover;border-radius:6px;display:block;}
+.pthumb .rm-photo{position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:var(--error);border:none;border-radius:50%;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;font-weight:700;}
+
+/* Status grid */
+.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.status-chip{min-height:62px;padding:10px 8px;background:var(--surface-2);border:2px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;transition:all 150ms;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);line-height:1.3;}
+.status-chip.sel{border-color:var(--accent);background:rgba(245,166,35,.1);color:var(--accent);}
+.status-chip-full{grid-column:1/-1;}
+.status-chip-other{grid-column:1/-1;font-size:12px;}
+
+/* Progress bar */
+.prog-bar{height:3px;background:var(--surface-2);overflow:hidden;}
+.prog-fill{height:100%;background:var(--accent);transition:width 300ms ease;}
+
+/* Review / submit */
+.review-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px;margin-bottom:12px;}
+.review-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:10px;}
+.rrow{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;gap:12px;}
+.rrow:last-child{border-bottom:none;}
+.rrow-label{color:var(--text-muted);flex:0 0 auto;}
+.rrow-val{font-weight:600;text-align:right;}
+.rrow-val.ok{color:var(--text);}
+.rrow-val.miss{color:var(--error);}
+.rrow-val.warn{color:var(--warning);}
+.rrow-val.good{color:var(--success);}
+
+/* Divider */
+.divider{height:1px;background:var(--border);margin:18px 0;}
+
+/* Toast */
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:11px 20px;font-size:14px;font-weight:700;color:var(--text);z-index:3000;animation:toastIn 300ms ease;white-space:nowrap;pointer-events:none;}
+.toast.ok{border-color:var(--success);color:var(--success);}
+.toast.err{border-color:var(--error);color:var(--error);}
+.toast.warn{border-color:var(--warning);color:var(--warning);}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(16px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;display:flex;align-items:flex-end;justify-content:center;padding:0 0 0 0;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:18px 18px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;animation:slideUp 240ms ease;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-title{font-size:19px;font-weight:800;margin-bottom:8px;}
+.modal-body{font-size:14px;color:var(--text-muted);margin-bottom:22px;line-height:1.6;}
+.modal-body strong{color:var(--text);}
+
+/* Success flash */
+.flash{position:fixed;inset:0;background:rgba(34,197,94,.25);z-index:2000;display:flex;align-items:center;justify-content:center;pointer-events:none;animation:flashAnim 700ms ease forwards;}
+.flash svg{width:80px;height:80px;color:var(--success);}
+@keyframes flashAnim{0%{opacity:0}30%{opacity:1}70%{opacity:1}100%{opacity:0}}
+
+/* Action list */
+.step1-block{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.5);border-radius:12px;margin-bottom:12px;overflow:hidden;}
+.step1-hdr{background:var(--error);color:#fff;padding:12px 15px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;display:flex;justify-content:space-between;align-items:center;}
+.step1-sub{font-size:11px;opacity:.8;font-weight:600;text-transform:none;letter-spacing:0;}
+.step1-vehicle{padding:13px 15px;border-bottom:1px solid rgba(239,68,68,.2);display:flex;align-items:center;gap:10px;}
+.step1-vehicle:last-child{border-bottom:none;}
+.step1-done{background:rgba(34,197,94,.08)!important;border-color:rgba(34,197,94,.2)!important;}
+
+.zone-block{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+.zone-hdr{padding:14px 15px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+.zone-hdr-left{display:flex;align-items:center;gap:10px;}
+.zone-name{font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;}
+.zone-badge{background:var(--accent);color:#000;font-size:11px;font-weight:800;padding:2px 9px;border-radius:20px;}
+.zone-badge.zero{background:var(--success);}
+.zone-chevron{font-size:12px;color:var(--text-muted);transition:transform 150ms;}
+.zone-chevron.open{transform:rotate(90deg);}
+.zone-body{padding:0 12px 12px;}
+.zone-done-hdr{display:block;width:100%;background:none;border:none;color:var(--text-muted);font-family:var(--font);font-size:12px;font-weight:700;text-align:left;cursor:pointer;padding:8px 4px;text-transform:uppercase;letter-spacing:.08em;}
+
+.vcard{background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:8px;}
+.vcard.all-done{opacity:.45;}
+.vcard-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.vcard-vin{font-family:'Courier New',monospace;font-size:14px;font-weight:800;letter-spacing:.1em;color:var(--accent);}
+.vcard-status{font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;}
+
+.action-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.action-item:last-child{border-bottom:none;}
+.achk{width:26px;height:26px;border:2px solid var(--border);border-radius:5px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 150ms;margin-top:1px;}
+.achk.chkd{background:var(--success);border-color:var(--success);color:#fff;}
+.atxt{flex:1;line-height:1.4;}
+.atxt.done{text-decoration:line-through;color:var(--text-muted);}
+
+.log-block{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+.log-hdr{padding:13px 15px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+.log-hdr-left{display:flex;align-items:center;gap:10px;}
+.log-title{font-size:14px;font-weight:800;}
+.log-count{font-size:12px;color:var(--text-muted);font-weight:700;}
+.log-chevron{font-size:12px;color:var(--text-muted);transition:transform 150ms;}
+.log-chevron.open{transform:rotate(90deg);}
+.copy-btn{font-size:12px;padding:6px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;color:var(--accent);cursor:pointer;font-family:var(--font);font-weight:700;}
+.log-body{padding:0 15px 13px;}
+.log-entry{padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.4;}
+.log-entry:last-child{border-bottom:none;}
+.log-vin{font-family:'Courier New',monospace;font-weight:800;font-size:14px;color:var(--accent);}
+
+.summary-card{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.srow{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid var(--border);}
+.srow:last-child{border-bottom:none;}
+.sval{font-weight:800;color:var(--accent);}
+
+input[type="file"]{display:none;}
+canvas{display:none;}
+.hidden{display:none!important;}
+hr.section-hr{border:none;border-top:1px solid var(--border);margin:18px 0;}
+```
+
+  </style>
+</head>
+<body>
+<div class="offline-banner" id="offlineBanner">⚡ OFFLINE — data saved locally</div>
+<div id="app"></div>
+<input type="file" id="photoInput" accept="image/*" capture="environment">
+<canvas id="photoCanvas"></canvas>
+<script>
+'use strict';
+
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const CFG = {
+vinLength: 6,
+photoMaxWidthPx: 800,
+photoQuality: 0.72,
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const STATE = {
+session: null,       // { id, date, status }
+vehicles: [],        // submitted vehicles
+currentVehicle: null,
+actionList: null,
+actionState: {},     // { key: bool }
+highContrast: false,
+online: navigator.onLine,
+photoTarget: null,   // { sectionKey } for pending photo
+expandedSections: new Set(),
+showNote: new Set(),
+collapsedZones: new Set(),
+expandedLogs: new Set(),
+};
+
+// ─── LOCALSTORAGE ─────────────────────────────────────────────────────────────
+const LS = {
+get(k){ try{ return JSON.parse(localStorage.getItem(‘lw_’+k)); }catch(e){ return null; } },
+set(k,v){ try{ localStorage.setItem(‘lw_’+k, JSON.stringify(v)); }catch(e){ if(e.name===‘QuotaExceededError’){ localStorage.removeItem(‘lw_photos’); toast(‘Storage full — photo cache cleared’,‘warn’); } } },
+rm(k){ try{ localStorage.removeItem(‘lw_’+k); }catch(e){} },
+clearAll(){ [‘session’,‘vehicles’,‘current’,‘action_list’,‘action_state’,‘photos’].forEach(k=>LS.rm(k)); }
+};
+
+function saveState(){
+if(STATE.session) LS.set(‘session’, STATE.session);
+LS.set(‘vehicles’, STATE.vehicles);
+if(STATE.currentVehicle) LS.set(‘current’, STATE.currentVehicle);
+if(STATE.actionList) LS.set(‘action_list’, STATE.actionList);
+LS.set(‘action_state’, STATE.actionState);
+}
+
+function loadState(){
+STATE.session = LS.get(‘session’) || null;
+STATE.vehicles = LS.get(‘vehicles’) || [];
+STATE.currentVehicle = LS.get(‘current’) || null;
+STATE.actionList = LS.get(‘action_list’) || null;
+STATE.actionState = LS.get(‘action_state’) || {};
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function genId(){ try{ return crypto.randomUUID(); }catch(e){ return Date.now().toString(36)+Math.random().toString(36).slice(2); } }
+function genSessionId(){
+const d=new Date();
+const ds=d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+const chars=‘ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789’;
+const r=Array.from({length:4},()=>chars[Math.floor(Math.random()*chars.length)]).join(’’);
+return ds+’-’+r;
+}
+function pad(n){ return String(n).padStart(2,‘0’); }
+function fmtDate(s){
+const d=s?new Date(s):new Date();
+return d.toLocaleDateString(‘en-CA’,{weekday:‘long’,month:‘long’,day:‘numeric’,year:‘numeric’});
+}
+function fmtDateShort(s){
+const d=s?new Date(s):new Date();
+return d.toLocaleDateString(‘en-CA’,{month:‘short’,day:‘numeric’});
+}
+function fmtTime(s){
+const d=s?new Date(s):new Date();
+return d.toLocaleTimeString(‘en-CA’,{hour:‘2-digit’,minute:‘2-digit’});
+}
+function esc(s){ return String(s||’’).replace(/&/g,’&’).replace(/</g,’<’).replace(/>/g,’>’); }
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+let _tt;
+function toast(msg,type=’’){
+document.querySelectorAll(’.toast’).forEach(e=>e.remove());
+clearTimeout(_tt);
+const el=document.createElement(‘div’);
+el.className=‘toast’+(type?’ ‘+type:’’);
+el.textContent=msg;
+document.body.appendChild(el);
+_tt=setTimeout(()=>el.remove(),2800);
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────────────────
+function modal({title, body, actions}){
+document.querySelectorAll(’.modal-overlay’).forEach(e=>e.remove());
+const btns=actions.map((a,i)=>`<button class="btn ${a.cls||'btn-secondary'}" data-mact="${i}">${a.label}</button>`).join(’’);
+const ov=document.createElement(‘div’);
+ov.className=‘modal-overlay’;
+ov.innerHTML=`<div class="modal"><div class="modal-title">${title}</div><div class="modal-body">${body}</div><div>${btns}</div></div>`;
+ov.addEventListener(‘click’,e=>{
+const b=e.target.closest(’[data-mact]’);
+if(b){ const i=parseInt(b.dataset.mact); ov.remove(); if(actions[i].cb) actions[i].cb(); }
+});
+document.body.appendChild(ov);
+}
+function closeModal(){ document.querySelectorAll(’.modal-overlay’).forEach(e=>e.remove()); }
+
+// ─── SUCCESS FLASH ────────────────────────────────────────────────────────────
+function flash(cb){
+const el=document.createElement(‘div’);
+el.className=‘flash’;
+el.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+document.body.appendChild(el);
+setTimeout(()=>{ el.remove(); if(cb) cb(); },700);
+}
+
+// ─── SECTION DEFINITIONS ─────────────────────────────────────────────────────
+const SDEFS = {
+parking_zone:{
+title:‘Parking Zone’, ctx:null, photo:false, noteToggle:true,
+opts:[
+{l:‘Cage’, v:‘cage’, valid:true},
+{l:‘East Side Fence’, v:‘east_side_fence’, valid:true},
+{l:‘West Side of Building’, v:‘west_side_building’, valid:true},
+{l:‘Topline loading zone’, v:‘topline_loading’, valid:false},
+{l:‘Customer parking’, v:‘customer_parking’, valid:false},
+{l:‘Manager parking’, v:‘manager_parking’, valid:false},
+{l:‘In front of dumpster’, v:‘in_front_dumpster’, valid:false},
+{l:‘Other’, v:‘other’, isOther:true},
+],
+},
+zone_match:{
+title:‘Zone Matches Inventory Status?’, ctx:null, noteToggle:true,
+photo:‘conditional’,
+photoCondition: (v)=> v===‘unclear’,
+opts:[
+{l:‘Yes — correct zone’, v:‘yes’},
+{l:‘No — should be in:’, v:‘no’, hasSub:true},
+{l:‘Unclear — needs clarification’, v:‘unclear’},
+{l:‘Other’, v:‘other’, isOther:true},
+],
+},
+in_recon_flag:{
+title:‘IN RECON Flag’, ctx:null, photo:false, noteToggle:true,
+noteLabel:‘Notes for Charlie:’, noteAlwaysOpen:true,
+conditional:(veh)=>veh.inventory_status===‘IN RECON’,
+opts:[
+{l:‘Flagged — add to IN RECON review log’, v:‘flagged’},
+{l:‘Other’, v:‘other’, isOther:true},
+],
+},
+stock_in_tag:{
+title:‘Stock-In Tag’, ctx:‘White tag, bottom-right windshield’, photo:false, noteToggle:true,
+opts:[
+{l:‘Present and correctly placed’, v:‘correct’},
+{l:‘Present but incorrectly placed’, v:‘misplaced’},
+{l:‘Missing’, v:‘missing’},
+{l:‘Other’, v:‘other’, isOther:true},
+],
+},
+sold_sign:{
+title:‘Sold Sign’, ctx:null, photo:false, noteToggle:true,
+conditional:(veh)=>[‘SIGNED DEAL’,‘BOOKED | NOT DELIVERED’].includes(veh.inventory_status),
+opts:[
+{l:‘Present — customer name written’, v:‘present_named’},
+{l:‘Present — customer name missing’, v:‘present_unnamed’},
+{l:‘Missing’, v:‘missing’},
+{l:‘Other’, v:‘other’, isOther:true},
+],
+},
+customer_vehicle:{
+title:‘Customer / Bank Rep Vehicle’, ctx:null, noteToggle:true,
+photo:‘conditional’,
+photoCondition:(v)=>v===‘unknown’,
+opts:[
+{l:‘Confirmed stock unit — no action’, v:‘stock’},
+{l:‘Confirmed customer or bank rep vehicle — no action’, v:‘confirmed_customer’},
+{l:‘Unknown — needs clarification’, v:‘unknown’},
+{l:‘Other’, v:‘other’, isOther:true},
+],
+},
+tape_stickers:{
+title:‘Tape / Stickers on Exterior’, ctx:‘Presence = PDI not complete’, photo:true, noteToggle:true,
+opts:[
+{l:‘None — clear’, v:‘none’},
+{l:‘Present’, v:‘present’},
+{l:‘Other’, v:‘other’, isOther:true},
+],
+},
+cleanliness_outside:{
+title:‘Cleanliness — Outside’, ctx:null, noteToggle:true,
+photo:‘conditional’,
+photoCondition:(v)=>v===‘dirty’,
+opts:[
+{l:‘Clean’, v:‘clean’},
+{l:‘Dirty’, v:‘dirty’},
+{l:‘Other’, v:‘other’, isOther:true},
+],
+},
+cleanliness_inside:{
+title:‘Cleanliness — Inside’, ctx:null, noteToggle:true,
+photo:‘conditional’,
+photoCondition:(v)=>v===‘dirty’,
+opts:[
+{l:‘Clean’, v:‘clean’},
+{l:‘Dirty’, v:‘dirty’},
+{l:‘Other’, v:‘other’, isOther:true},
+],
+},
+plastic_covers:{
+title:‘Plastic Covers Inside’, ctx:null, noteToggle:true,
+photo:‘conditional’,
+photoCondition:(v)=>v===‘present’,
+opts:[
+{l:‘Removed — clear’, v:‘removed’},
+{l:‘Still present’, v:‘present’},
+{l:‘Other’, v:‘other’, isOther:true},
+],
+},
+facing_outward:{
+title:‘Facing Outward’, ctx:null, photo:false, noteToggle:true,
+opts:[
+{l:‘Yes — correct’, v:‘yes’},
+{l:‘No — needs repositioning’, v:‘no’},
+{l:‘Other’, v:‘other’, isOther:true},
+],
+},
+door_spacing:{
+title:‘Door-Opening Spacing’, ctx:null, photo:false, noteToggle:true,
+opts:[
+{l:‘Adequate’, v:‘adequate’},
+{l:‘Insufficient — needs adjustment’, v:‘insufficient’},
+{l:‘Other’, v:‘other’, isOther:true},
+],
+},
+};
+
+const SORDER=[‘parking_zone’,‘zone_match’,‘in_recon_flag’,‘stock_in_tag’,‘sold_sign’,‘customer_vehicle’,‘tape_stickers’,‘cleanliness_outside’,‘cleanliness_inside’,‘plastic_covers’,‘facing_outward’,‘door_spacing’];
+const VALID_ZONES=[‘cage’,‘east_side_fence’,‘west_side_building’];
+const STATUSES=[‘AVAILABLE’,‘SIGNED DEAL’,‘BOOKED | NOT DELIVERED’,‘IN RECON’,‘WHOLESALE’,‘WHOLESALE | BOS’];
+
+function getApplicable(veh){
+return SORDER.filter(k=>{ const d=SDEFS[k]; return !(d.conditional&&!d.conditional(veh)); });
+}
+
+function correctZone(status){
+if(status===‘AVAILABLE’) return ‘Cage’;
+if([‘SIGNED DEAL’,‘BOOKED | NOT DELIVERED’].includes(status)) return ‘East Side Fence’;
+return ‘West Side of Building’;
+}
+
+function zoneBucket(v){
+if(v===‘cage’) return ‘cage’;
+if(v===‘east_side_fence’) return ‘east’;
+return ‘west’;
+}
+
+function getPhotos(vehicleId, sectionKey){
+const all=LS.get(‘photos’)||{};
+return (all[vehicleId]||{})[sectionKey]||[];
+}
+
+function addPhoto(vehicleId, sectionKey, b64){
+const all=LS.get(‘photos’)||{};
+if(!all[vehicleId]) all[vehicleId]={};
+if(!all[vehicleId][sectionKey]) all[vehicleId][sectionKey]=[];
+all[vehicleId][sectionKey].push(b64);
+LS.set(‘photos’,all);
+}
+
+function removePhotoAt(vehicleId, sectionKey, idx){
+const all=LS.get(‘photos’)||{};
+if(all[vehicleId]&&all[vehicleId][sectionKey]) all[vehicleId][sectionKey].splice(idx,1);
+LS.set(‘photos’,all);
+}
+
+// ─── SCREEN RENDERER ──────────────────────────────────────────────────────────
+function render(screen, data={}){
+const app=document.getElementById(‘app’);
+if(screen===‘start’) app.innerHTML=scrStart();
+else if(screen===‘resume’) app.innerHTML=scrResume();
+else if(screen===‘entry’) app.innerHTML=scrEntry();
+else if(screen===‘checklist’) app.innerHTML=scrChecklist();
+else if(screen===‘actions’) app.innerHTML=scrActions();
+else app.innerHTML=scrStart();
+}
+
+// ─── SCREEN: START ────────────────────────────────────────────────────────────
+function scrStart(){
+return `<div class="screen start-screen">
+<div class="start-logo">Sturgeon Dodge</div>
+<h1 class="start-title">Morning Lot Walk</h1>
+<div class="start-date">${fmtDate()}</div>
+<button class="btn btn-primary" onclick="startAudit()">Start Audit</button>
+
+  </div>`;
+}
+
+// ─── SCREEN: RESUME ───────────────────────────────────────────────────────────
+function scrResume(){
+const s=STATE.session;
+const cnt=STATE.vehicles.length;
+const ds=fmtDateShort(s.date);
+const isAction=s.status===‘action’;
+const left=isAction?countLeft():null;
+return `<div class="screen start-screen">
+<div class="start-logo">Sturgeon Dodge</div>
+<h1 class="start-title">${isAction?‘Audit Complete’:‘Audit in Progress’}</h1>
+<div class="start-date">${ds} · ${cnt} vehicle${cnt!==1?‘s’:’’} done${left!==null?’ · ‘+left+’ items left’:’’}</div>
+<button class="btn btn-primary" onclick="${isAction?'render(\'actions\')':'render(\'entry\')'}">${isAction?‘View Action List’:‘Resume’}</button>
+<button class="btn btn-ghost" onclick="confirmStartNew()">Start New Audit</button>
+
+  </div>`;
+}
+
+function countLeft(){
+if(!STATE.actionList) return 0;
+let t=0;
+const al=STATE.actionList;
+al.step1.forEach((*,i)=>{ if(!STATE.actionState[’step1*’+i]) t++; });
+[‘cage’,‘east’,‘west’].forEach(z=>{
+al.zones[z].forEach(v=>{ v.actions.forEach((*,i)=>{ if(!STATE.actionState[v.id+’*’+i]) t++; }); });
+});
+return t;
+}
+
+// ─── SCREEN: ENTRY ────────────────────────────────────────────────────────────
+function scrEntry(){
+const cnt=STATE.vehicles.length;
+const ds=fmtDateShort(STATE.session.date);
+const rows=STATE.vehicles.slice().reverse().map(v=>{
+const icon=v.sync_status===‘synced’
+?`<span class="sync-icon si-ok">✓</span>`
+:`<span class="sync-icon si-fail" title="Tap to re-download" data-redownload="${v.id}" onclick="redownload('${v.id}')">↓</span>`;
+return `<div class="v-row" onclick="reviewVehicle('${v.id}')"> <span class="v-vin">${esc(v.vin)}</span> <span class="v-badge">${esc(v.inventory_status.split('|')[0].trim())}</span> ${icon} </div>`;
+}).join(’’);
+
+return `<div class="screen">
+<div class="hdr">
+<div class="hdr-left">
+<div class="hdr-title">Lot Walk</div>
+<div class="hdr-sub">${ds}</div>
+</div>
+<div class="hdr-right">
+<span class="hdr-count">${cnt} done</span>
+<button class="icon-btn" onclick="showSettings()" title="Settings">⚙</button>
+</div>
+</div>
+
+```
+<div class="content pb-safe">
+  <div class="sec-label">Enter Last 6 of VIN</div>
+  <div class="vin-wrap">
+    <input class="vin-input" id="vinInput" type="text" maxlength="6" placeholder="______"
+      autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+      oninput="onVinInput(this)">
+    <span class="vin-counter" id="vinCounter">0/6</span>
+  </div>
+  <button class="btn btn-primary" id="btnBegin" disabled onclick="beginChecklist()">Begin Checklist</button>
+
+  ${cnt>0?`<div class="divider"></div><div class="sec-label">Completed this session</div><div class="vehicles-list">${rows}</div>`:''}
+</div>
+
+<div class="fixed-bottom">
+  <button class="btn ${cnt>0?'btn-secondary':'btn-ghost'}" ${cnt===0?'disabled':''} onclick="confirmCompleteAudit()">
+    Complete Audit
+  </button>
+</div>
+```
+
+  </div>`;
+}
+
+function onVinInput(el){
+el.value=el.value.replace(/[^A-Z0-9]/gi,’’).toUpperCase().slice(0,6);
+const n=el.value.length;
+document.getElementById(‘vinCounter’).textContent=n+’/6’;
+const btn=document.getElementById(‘btnBegin’);
+if(btn) btn.disabled=n!==6;
+}
+
+// ─── SCREEN: CHECKLIST ────────────────────────────────────────────────────────
+function scrChecklist(){
+const v=STATE.currentVehicle;
+const applicable=v.inventory_status?getApplicable(v):[];
+const answered=applicable.filter(k=>v.sections[k]&&v.sections[k].value).length;
+const total=applicable.length;
+const pct=total>0?Math.round(answered/total*100):0;
+
+return `<div class="screen"> <div class="hdr"> <button class="icon-btn" onclick="checklistBack()">&#8592;</button> <div style="flex:1;text-align:center"> <span style="font-family:'Courier New',monospace;font-size:18px;font-weight:900">${esc(v.vin)}</span> ${v.inventory_status?`<button onclick="changeStatus()" style="margin-left:8px;font-size:10px;font-weight:800;padding:3px 8px;background:rgba(245,166,35,.15);color:var(--accent);border:1px solid var(--accent);border-radius:4px;cursor:pointer;font-family:var(--font);text-transform:uppercase;">${esc(v.inventory_status.split(’|’)[0].trim())}</button>`:’’}
+</div>
+<span style="font-size:12px;color:var(--text-muted);min-width:36px;text-align:right;font-weight:700">${answered}/${total}</span>
+</div>
+<div class="prog-bar"><div class="prog-fill" id="progFill" style="width:${pct}%"></div></div>
+
+```
+<div class="content pb-safe" id="clContent">
+  ${renderStatusGrid(v)}
+  ${v.inventory_status?`
+    <div id="sectionsWrap">
+      ${applicable.map(k=>renderSection(k,v)).join('')}
+    </div>
+    <div id="reviewWrap">
+      ${renderReview(v, applicable)}
+    </div>
+  `:''}
+</div>
+```
+
+  </div>`;
+}
+
+function renderStatusGrid(v){
+const chips=STATUSES.map(s=>`<div class="status-chip${v.inventory_status===s?' sel':''}" onclick="selectStatus('${esc(s)}')">${esc(s)}</div>`).join(’’);
+const otherSelected=v.inventory_status&&!STATUSES.includes(v.inventory_status);
+return `<div class="sec-label">Inventory Status</div>
+
+  <div class="status-grid" style="margin-bottom:20px">
+    ${chips}
+    <div class="status-chip status-chip-other${otherSelected?' sel':''}" onclick="promptOtherStatus()">
+      ${otherSelected?esc(v.inventory_status):'Other…'}
+    </div>
+  </div>`;
+}
+
+function renderSection(key, veh){
+const def=SDEFS[key];
+const sec=veh.sections[key];
+const isExpanded=STATE.expandedSections.has(key)||!sec||!sec.value;
+const isFlaggedZone=key===‘parking_zone’&&sec&&sec.value&&!VALID_ZONES.includes(sec.value);
+
+if(!isExpanded && sec && sec.value){
+const dispVal=sec.value===‘other’?(sec.other||‘Other’):sec.label;
+return `<div class="sblock answered${isFlaggedZone?' flagged-zone':''}" id="sb_${key}"> <div class="sblock-collapsed"> <span style="color:var(--success);font-size:14px;">✓</span> <span class="sc-label">${esc(def.title)}:</span> <span class="sc-answer">${esc(dispVal)}</span> ${sec.notes?`<span style="font-size:11px;color:var(--text-muted)">📝</span>`:''} ${getPhotos(veh.id,key).length?`<span style="font-size:11px;color:var(--text-muted)">📷${getPhotos(veh.id,key).length}</span>`:''} <button class="edit-btn" onclick="expandSection('${key}')">edit</button> </div> ${isFlaggedZone?`<div class="warn-banner" style="margin:0 15px 12px">⚠ Invalid zone — flagged for Step 1 relocation</div>`:''} </div>`;
+}
+
+const noteOpen=STATE.showNote.has(key)||!!(sec&&sec.notes)||(def.noteAlwaysOpen);
+const curVal=sec?sec.value:’’;
+const curSub=sec?sec.subValue:’’;
+const curOther=sec?sec.other:’’;
+const curNote=sec?sec.notes:’’;
+const photos=getPhotos(veh.id,key);
+
+const opts=def.opts.map(o=>{
+const isSel=curVal===o.v;
+return `<div class="opt${isSel?' sel':''}" onclick="selectOption('${key}','${o.v}','${esc(o.l)}')" id="opt_${key}_${o.v}"> <div class="rdot"></div> <div class="opt-label">${esc(o.l)}${o.hasSub&&isSel?': <span style="color:var(--accent)">↓</span>':''}</div> </div> ${o.isOther&&isSel?`<input class="other-input" placeholder="Specify…" value="${esc(curOther)}" onchange="updateOther('${key}',this.value)" oninput="updateOther('${key}',this.value)">`:''} ${o.hasSub&&isSel?`<input class="sub-input" placeholder="${esc(correctZone(veh.inventory_status))}" value="${esc(curSub)}" onchange="updateSub('${key}',this.value)" oninput="updateSub('${key}',this.value)" id="subinput_${key}">`:''} `;
+}).join(’’);
+
+const showPhoto=def.photo===true||(def.photo===‘conditional’&&def.photoCondition&&def.photoCondition(curVal));
+const photoHtml=showPhoto?` <button class="sec-footer-btn${photos.length?' has-content':''}" onclick="triggerPhoto('${key}')">📷 ${photos.length?`${photos.length} photo${photos.length>1?‘s’:’`'}` :‘Add photo’}</button>
+`:’’;
+
+const thumbsHtml=photos.length?`<div class="photo-thumbs">${photos.map((b,i)=>`
+<div class="pthumb"><img src="${b}" alt="photo"><button class="rm-photo" onclick="rmPhoto('${key}',${i})">×</button></div>
+`).join('')}</div>`:’’;
+
+const noteHtml=def.noteToggle?` <button class="sec-footer-btn${curNote?' has-content':''}" onclick="toggleNote('${key}')">${noteOpen?'▾':'+'} ${def.noteLabel||'Add note'}</button> ${noteOpen?`<textarea class="note-ta" placeholder="${esc(def.noteLabel||'Add note…')}" onchange="updateNote('${key}',this.value)" oninput="updateNote('${key}',this.value)">${esc(curNote)}</textarea>`:''} `:’’;
+
+const warnBanner=(key===‘parking_zone’&&curVal&&!VALID_ZONES.includes(curVal))
+?`<div class="warn-banner">⚠ Invalid zone — flagged for Step 1 relocation in action list.</div>`:’’;
+
+return `<div class="sblock${sec&&sec.value?' answered':''}" id="sb_${key}"> <div class="sblock-head"> <div class="sblock-title">${esc(def.title)}</div> ${def.ctx?`<div class="sblock-ctx">${esc(def.ctx)}</div>`:’’}
+</div>
+<div class="sblock-body">
+<div class="opt-list">${opts}</div>
+${warnBanner}
+${thumbsHtml}
+<div class="sec-footer">
+${noteHtml}
+${photoHtml}
+</div>
+</div>
+
+  </div>`;
+}
+
+function renderReview(veh, applicable){
+const rows=applicable.map(k=>{
+const def=SDEFS[k];
+const sec=veh.sections[k];
+const val=sec&&sec.value?(sec.value===‘other’?(sec.other||‘Other’):sec.label):’—’;
+const cls=!sec||!sec.value?‘miss’:VALID_ZONES.indexOf(sec.value)===-1&&k===‘parking_zone’?‘warn’:‘ok’;
+return `<div class="rrow"> <span class="rrow-label">${esc(def.title)}</span> <span class="rrow-val ${cls}">${esc(val)}</span> </div>`;
+}).join(’’);
+
+const unanswered=applicable.filter(k=>!veh.sections[k]||!veh.sections[k].value).length;
+const btnLabel=unanswered>0?`Submit anyway (${unanswered} unanswered)`:‘Submit Vehicle’;
+
+return `<hr class="section-hr">
+
+  <div class="review-card">
+    <div class="review-title">Review</div>
+    ${rows}
+  </div>
+  <button class="btn btn-primary" onclick="submitVehicle()">${btnLabel}</button>
+  `;
+}
+
+function updateProgress(){
+const v=STATE.currentVehicle;
+if(!v) return;
+const applicable=getApplicable(v);
+const answered=applicable.filter(k=>v.sections[k]&&v.sections[k].value).length;
+const total=applicable.length;
+const pct=total>0?Math.round(answered/total*100):0;
+const fill=document.getElementById(‘progFill’);
+const hdr=document.querySelector(’.hdr span[style*=“text-muted”]’);
+if(fill) fill.style.width=pct+’%’;
+const ctr=document.querySelector(’.hdr span:last-child’);
+if(ctr&&ctr.style.color!==‘white’) ctr.textContent=answered+’/’+total;
+// Update header counter properly
+const hdrctr=document.querySelector(’.hdr > span[style*=“text-muted”]’);
+}
+
+// ─── CHECKLIST INTERACTIONS ───────────────────────────────────────────────────
+function selectStatus(status){
+const v=STATE.currentVehicle;
+const prev=v.inventory_status;
+const willClearConditional=prev&&prev!==status&&(
+(prev===‘IN RECON’&&v.sections.in_recon_flag)||
+([‘SIGNED DEAL’,‘BOOKED | NOT DELIVERED’].includes(prev)&&![‘SIGNED DEAL’,‘BOOKED | NOT DELIVERED’].includes(status)&&v.sections.sold_sign)
+);
+if(willClearConditional){
+modal({
+title:‘Change Status?’,
+body:`Changing from <strong>${prev}</strong> to <strong>${status}</strong> will clear conditional section answers.`,
+actions:[
+{label:‘Cancel’, cls:‘btn-ghost’},
+{label:‘Change Status’, cls:‘btn-danger’, cb:()=>doSelectStatus(status)},
+]
+});
+return;
+}
+doSelectStatus(status);
+}
+
+function doSelectStatus(status){
+const v=STATE.currentVehicle;
+const prev=v.inventory_status;
+v.inventory_status=status;
+// Clear conditional sections if no longer applicable
+if(prev===‘IN RECON’&&status!==‘IN RECON’) v.sections.in_recon_flag=null;
+if([‘SIGNED DEAL’,‘BOOKED | NOT DELIVERED’].includes(prev)&&![‘SIGNED DEAL’,‘BOOKED | NOT DELIVERED’].includes(status)) v.sections.sold_sign=null;
+LS.set(‘current’,v);
+render(‘checklist’);
+// Auto-focus first section after status select
+setTimeout(()=>{
+const first=document.querySelector(’.sblock’);
+if(first) first.scrollIntoView({behavior:‘smooth’,block:‘start’});
+},100);
+}
+
+function promptOtherStatus(){
+const v=STATE.currentVehicle;
+const cur=!STATUSES.includes(v.inventory_status)?v.inventory_status:’’;
+const val=prompt(‘Enter inventory status:’,cur||’’);
+if(val&&val.trim()) doSelectStatus(val.trim().toUpperCase());
+}
+
+function changeStatus(){
+modal({
+title:‘Change Status’,
+body:‘Select the correct inventory status for this vehicle.’,
+actions:[
+…STATUSES.map(s=>({label:s, cls:‘btn-secondary’, cb:()=>selectStatus(s)})),
+{label:‘Cancel’, cls:‘btn-ghost’},
+]
+});
+}
+
+function selectOption(key, val, label){
+const v=STATE.currentVehicle;
+if(!v.sections[key]) v.sections[key]={};
+v.sections[key].value=val;
+v.sections[key].label=label;
+// Auto-populate zone_match sub if ‘no’
+if(key===‘zone_match’&&val===‘no’&&!v.sections[key].subValue){
+v.sections[key].subValue=correctZone(v.inventory_status);
+}
+// Set in_recon flagged bool
+if(key===‘in_recon_flag’) v.sections[key].flagged=(val===‘flagged’);
+// Set tape_stickers present bool
+if(key===‘tape_stickers’) v.sections[key].present=(val===‘present’);
+LS.set(‘current’,v);
+
+// Re-render section and review
+refreshSection(key);
+refreshReview();
+updateHeaderProgress();
+
+// After answering, collapse and scroll to next
+if(val!==‘other’){
+STATE.expandedSections.delete(key);
+setTimeout(()=>{
+const applicable=getApplicable(v);
+const idx=applicable.indexOf(key);
+if(idx<applicable.length-1){
+const nextKey=applicable[idx+1];
+const nextEl=document.getElementById(‘sb_’+nextKey);
+if(nextEl) nextEl.scrollIntoView({behavior:‘smooth’,block:‘start’});
+}
+},200);
+}
+}
+
+function updateOther(key, val){
+const v=STATE.currentVehicle;
+if(!v.sections[key]) v.sections[key]={};
+v.sections[key].other=val;
+if(val) v.sections[key].label=val;
+LS.set(‘current’,v);
+}
+
+function updateSub(key, val){
+const v=STATE.currentVehicle;
+if(!v.sections[key]) v.sections[key]={};
+v.sections[key].subValue=val;
+LS.set(‘current’,v);
+}
+
+function toggleNote(key){
+if(STATE.showNote.has(key)) STATE.showNote.delete(key); else STATE.showNote.add(key);
+refreshSection(key);
+}
+
+function updateNote(key, val){
+const v=STATE.currentVehicle;
+if(!v.sections[key]) v.sections[key]={};
+v.sections[key].notes=val;
+LS.set(‘current’,v);
+}
+
+function expandSection(key){
+STATE.expandedSections.add(key);
+refreshSection(key);
+setTimeout(()=>{
+const el=document.getElementById(‘sb_’+key);
+if(el) el.scrollIntoView({behavior:‘smooth’,block:‘start’});
+},50);
+}
+
+function refreshSection(key){
+const el=document.getElementById(‘sb_’+key);
+if(!el) return;
+const v=STATE.currentVehicle;
+const tmp=document.createElement(‘div’);
+tmp.innerHTML=renderSection(key,v);
+el.replaceWith(tmp.firstElementChild);
+}
+
+function refreshReview(){
+const el=document.getElementById(‘reviewWrap’);
+if(!el) return;
+const v=STATE.currentVehicle;
+const applicable=getApplicable(v);
+el.innerHTML=renderReview(v,applicable);
+}
+
+function updateHeaderProgress(){
+const v=STATE.currentVehicle;
+if(!v) return;
+const applicable=getApplicable(v);
+const answered=applicable.filter(k=>v.sections[k]&&v.sections[k].value).length;
+const total=applicable.length;
+const pct=total>0?Math.round(answered/total*100):0;
+const fill=document.getElementById(‘progFill’);
+if(fill) fill.style.width=pct+’%’;
+// Update counter in header
+const hdrEl=document.querySelector(’.hdr’);
+if(hdrEl){
+const spans=hdrEl.querySelectorAll(‘span’);
+spans.forEach(s=>{ if(s.style&&s.style.textAlign===‘right’) s.textContent=answered+’/’+total; });
+}
+}
+
+// ─── PHOTOS ───────────────────────────────────────────────────────────────────
+function triggerPhoto(key){
+STATE.photoTarget=key;
+const inp=document.getElementById(‘photoInput’);
+inp.value=’’;
+inp.click();
+}
+
+document.getElementById(‘photoInput’).addEventListener(‘change’, function(e){
+const file=e.target.files[0];
+if(!file||!STATE.photoTarget) return;
+const key=STATE.photoTarget;
+const v=STATE.currentVehicle;
+if(!v) return;
+const canvas=document.getElementById(‘photoCanvas’);
+const ctx=canvas.getContext(‘2d’);
+const img=new Image();
+img.onload=function(){
+const maxW=CFG.photoMaxWidthPx;
+const scale=img.width>maxW?maxW/img.width:1;
+canvas.width=Math.round(img.width*scale);
+canvas.height=Math.round(img.height*scale);
+ctx.drawImage(img,0,0,canvas.width,canvas.height);
+const b64=canvas.toDataURL(‘image/jpeg’,CFG.photoQuality);
+addPhoto(v.id,key,b64);
+if(!v.sections[key]) v.sections[key]={};
+v.sections[key].photo_taken=true;
+LS.set(‘current’,v);
+STATE.photoTarget=null;
+refreshSection(key);
+toast(‘Photo added ✓’,‘ok’);
+};
+img.onerror=function(){ toast(‘Could not load photo’,‘err’); };
+img.src=URL.createObjectURL(file);
+});
+
+function rmPhoto(key, idx){
+const v=STATE.currentVehicle;
+if(!v) return;
+removePhotoAt(v.id, key, idx);
+refreshSection(key);
+}
+
+// ─── VEHICLE SUBMIT ───────────────────────────────────────────────────────────
+function submitVehicle(){
+const v=STATE.currentVehicle;
+const applicable=getApplicable(v);
+const unanswered=applicable.filter(k=>!v.sections[k]||!v.sections[k].value);
+if(unanswered.length>0){
+modal({
+title:‘Unanswered Sections’,
+body:`<strong>${unanswered.length} section${unanswered.length>1?'s are':' is'} unanswered:</strong><br>${unanswered.map(k=>SDEFS[k].title).join(', ')}.<br><br>Submit anyway?`,
+actions:[
+{label:‘Go Back’, cls:‘btn-ghost’},
+{label:‘Submit Anyway’, cls:‘btn-primary’, cb:doSubmitVehicle},
+]
+});
+return;
+}
+doSubmitVehicle();
+}
+
+function doSubmitVehicle(){
+const v=STATE.currentVehicle;
+v.submitted_at=new Date().toISOString();
+v.sync_status=‘synced’;
+v.session_id=STATE.session.id;
+
+// Check photos total size
+const allPhotos=LS.get(‘photos’)||{};
+const vehiclePhotos=allPhotos[v.id]||{};
+let totalB64=0;
+Object.values(vehiclePhotos).forEach(arr=>arr.forEach(b=>totalB64+=b.length));
+const totalKB=Math.round(totalB64*0.75/1024);
+if(totalKB>500){
+v.photo_note=‘Photos stored locally on device (>500KB)’;
+toast(‘Photos too large to include in download — noted’,‘warn’);
+}
+
+// Add to vehicles
+STATE.vehicles.push(v);
+STATE.currentVehicle=null;
+LS.set(‘current’,null);
+saveState();
+
+// Download markdown
+downloadVehicleMd(v);
+
+flash(()=>render(‘entry’));
+}
+
+// ─── COMPLETE AUDIT ───────────────────────────────────────────────────────────
+function confirmCompleteAudit(){
+const cnt=STATE.vehicles.length;
+if(cnt===0){ toast(‘Submit at least one vehicle first’,‘warn’); return; }
+modal({
+title:‘Complete Audit?’,
+body:`End audit and generate action list?<br><strong>${cnt} vehicle${cnt!==1?'s':''}</strong> submitted.`,
+actions:[
+{label:‘Cancel’, cls:‘btn-ghost’},
+{label:‘Generate Action List’, cls:‘btn-primary’, cb:doCompleteAudit},
+]
+});
+}
+
+function doCompleteAudit(){
+STATE.actionList=generateActionList(STATE.vehicles);
+STATE.session.status=‘action’;
+STATE.actionState={};
+saveState();
+downloadSessionMd();
+render(‘actions’);
+}
+
+// ─── ACTION LIST GENERATION ───────────────────────────────────────────────────
+function generateActionList(vehicles){
+const step1=[];
+const zones={cage:[],east:[],west:[]};
+const logs={inRecon:[],pdi:[],stockTag:[],detail:[]};
+
+vehicles.forEach(v=>{
+const s=v.sections;
+const actions=[];
+const pz=s.parking_zone;
+const isValid=pz&&VALID_ZONES.includes(pz.value);
+
+```
+// STEP 1 — invalid zone
+if(!isValid){
+  step1.push({id:v.id,vin:v.vin,status:v.inventory_status,currentZone:pz?pz.label:'Unknown',moveTo:correctZone(v.inventory_status)});
+}
+
+// Wrong zone but valid
+if(s.zone_match&&s.zone_match.value==='no'&&isValid){
+  const dst=s.zone_match.subValue||correctZone(v.inventory_status);
+  actions.push('Move to: '+dst);
+}
+
+// Tape / PDI
+if(s.tape_stickers&&s.tape_stickers.value==='present'){
+  actions.push('Remove tape/stickers — PDI not complete');
+  logs.pdi.push({vin:v.vin,zone:pz?pz.label:'Unknown'});
+}
+
+// Cleanliness
+const dirtyIn=s.cleanliness_inside&&s.cleanliness_inside.value==='dirty';
+const dirtyOut=s.cleanliness_outside&&s.cleanliness_outside.value==='dirty';
+const isAvail=v.inventory_status==='AVAILABLE';
+if(dirtyIn){
+  actions.push('Full detail — DHD (dirty inside)');
+  logs.detail.push({vin:v.vin,type:'Full detail',reason:'Dirty inside'});
+} else if(dirtyOut&&isAvail){
+  actions.push('Quick rinse — Hughes (dirty outside, clean inside, AVAILABLE)');
+  logs.detail.push({vin:v.vin,type:'Quick rinse',reason:'Dirty outside / clean inside / AVAILABLE'});
+} else if(dirtyOut&&!isAvail){
+  actions.push('Full detail — DHD (dirty outside, non-AVAILABLE)');
+  logs.detail.push({vin:v.vin,type:'Full detail',reason:'Dirty outside / non-AVAILABLE'});
+}
+
+// Plastic covers
+if(s.plastic_covers&&s.plastic_covers.value==='present'){
+  actions.push('Remove plastic covers from interior');
+}
+
+// Stock-in tag
+if(s.stock_in_tag){
+  if(s.stock_in_tag.value==='missing'){
+    actions.push('Stock-in tag: get from Jorja or Giselle → bottom-right windshield');
+    logs.stockTag.push({vin:v.vin,issue:'Missing'});
+  } else if(s.stock_in_tag.value==='misplaced'){
+    actions.push('Stock-in tag: reposition to bottom-right windshield');
+    logs.stockTag.push({vin:v.vin,issue:'Misplaced'});
+  }
+}
+
+// Sold sign
+if(s.sold_sign){
+  if(s.sold_sign.value==='missing') actions.push('Sold sign: get from upstairs, write customer name, place in window');
+  else if(s.sold_sign.value==='present_unnamed') actions.push('Sold sign: write customer name on existing sign');
+}
+
+// Facing outward
+if(s.facing_outward&&s.facing_outward.value==='no') actions.push('Reposition vehicle to face outward');
+
+// Door spacing
+if(s.door_spacing&&s.door_spacing.value==='insufficient') actions.push('Adjust door-opening spacing');
+
+// Customer vehicle unknown
+if(s.customer_vehicle&&s.customer_vehicle.value==='unknown') actions.push('Clarify vehicle identity before any action');
+
+// IN RECON log
+if(s.in_recon_flag&&s.in_recon_flag.flagged){
+  logs.inRecon.push({vin:v.vin,zone:pz?pz.label:'Unknown',notes:s.in_recon_flag.notes||''});
+}
+
+if(actions.length>0){
+  const bucket=isValid?zoneBucket(pz.value):'west';
+  zones[bucket].push({id:v.id,vin:v.vin,status:v.inventory_status,actions});
+}
+```
+
+});
+
+return {step1,zones,logs};
+}
+
+// ─── SCREEN: ACTION LIST ──────────────────────────────────────────────────────
+function scrActions(){
+const al=STATE.actionList;
+if(!al) return `<div class="screen content"><p>No action list. <button class="btn btn-primary" onclick="render('entry')">Back</button></p></div>`;
+const total=STATE.vehicles.length;
+const left=countLeft();
+const ds=fmtDateShort(STATE.session.date);
+
+// Step 1
+let step1Html=’’;
+if(al.step1.length>0){
+const done=al.step1.filter((*,i)=>STATE.actionState[’step1*’+i]).length;
+const rows=al.step1.map((v,i)=>{
+const chkd=STATE.actionState[‘step1_’+i];
+return `<div class="step1-vehicle${chkd?' step1-done':''}"> <div class="achk${chkd?' chkd':''}" onclick="toggleStep1(${i})">${chkd?'✓':''}</div> <div style="flex:1"> <div style="font-family:'Courier New',monospace;font-weight:800;color:var(--accent)">${esc(v.vin)}</div> <div style="font-size:12px;color:var(--text-muted)">${esc(v.status)}</div> <div style="font-size:13px;margin-top:3px">Currently: <em>${esc(v.currentZone)}</em> <span style="color:var(--accent)">→</span> Move to: <strong>${esc(v.moveTo)}</strong></div> </div> </div>`;
+}).join(’’);
+step1Html=`<div class="step1-block"> <div class="step1-hdr"> <div><div>STEP 1 — MOVE THESE FIRST</div><div class="step1-sub">Both people. Do before Step 2.</div></div> <div>${done}/${al.step1.length} moved</div> </div> ${rows} </div>`;
+}
+
+// Step 2 zones
+const zoneNames={cage:‘CAGE’,east:‘EAST SIDE FENCE’,west:‘WEST SIDE OF BUILDING’};
+let zonesHtml=’’;
+[‘cage’,‘east’,‘west’].forEach(zk=>{
+const zvehicles=al.zones[zk];
+if(!zvehicles||zvehicles.length===0) return;
+const remaining=zvehicles.reduce((sum,v)=>sum+v.actions.filter((*,i)=>!STATE.actionState[v.id+’*’+i]).length,0);
+const isCollapsed=STATE.collapsedZones.has(zk);
+const vcards=zvehicles.map(v=>{
+const allDone=v.actions.every((*,i)=>STATE.actionState[v.id+’*’+i]);
+const items=v.actions.map((a,i)=>{
+const chkd=STATE.actionState[v.id+’_’+i];
+return `<div class="action-item"> <div class="achk${chkd?' chkd':''}" onclick="toggleAction('${v.id}',${i})">${chkd?'✓':''}</div> <div class="atxt${chkd?' done':''}">${esc(a)}</div> </div>`;
+}).join(’’);
+return `<div class="vcard${allDone?' all-done':''}" id="vcard_${v.id}"> <div class="vcard-hdr"> <span class="vcard-vin">${esc(v.vin)}</span> <span class="vcard-status">${esc(v.status)}</span> </div> ${items} </div>`;
+}).join(’’);
+zonesHtml+=`<div class="zone-block" id="zb_${zk}"> <div class="zone-hdr" onclick="toggleZone('${zk}')"> <div class="zone-hdr-left"> <span class="zone-chevron${isCollapsed?'':' open'}">&#9654;</span> <span class="zone-name">${zoneNames[zk]}</span> </div> <span class="zone-badge${remaining===0?' zero':''}" id="zbadge_${zk}">${remaining}</span> </div> ${isCollapsed?'':`<div class="zone-body" id="zbody_${zk}">${vcards}</div>`} </div>`;
+});
+
+// Logs
+const logDefs=[
+{key:‘inRecon’,title:‘IN RECON — Alex / Charlie Review’,entries:al.logs.inRecon,render:e=>`<div class="log-entry"><span class="log-vin">${esc(e.vin)}</span> | Zone: ${esc(e.zone)}${e.notes?`<br><span style="color:var(--text-muted)">${esc(e.notes)}</span>`:''}</div>`},
+{key:‘pdi’,title:‘PDI Incomplete — Tape Found’,entries:al.logs.pdi,render:e=>`<div class="log-entry"><span class="log-vin">${esc(e.vin)}</span> | Zone: ${esc(e.zone)}</div>`},
+{key:‘stockTag’,title:‘Stock-In Tag Issues’,entries:al.logs.stockTag,render:e=>`<div class="log-entry"><span class="log-vin">${esc(e.vin)}</span> | ${esc(e.issue)}</div>`},
+{key:‘detail’,title:‘Detail / Rinse Required’,entries:al.logs.detail,render:e=>`<div class="log-entry"><span class="log-vin">${esc(e.vin)}</span> — ${esc(e.type)}<br><span style="color:var(--text-muted);font-size:12px">${esc(e.reason)}</span></div>`},
+];
+const logsHtml=logDefs.map(ld=>{
+if(!ld.entries.length) return ‘’;
+const isOpen=STATE.expandedLogs.has(ld.key);
+const body=isOpen?`<div class="log-body">${ld.entries.map(ld.render).join('')}</div>`:’’;
+return `<div class="log-block"> <div class="log-hdr" onclick="toggleLog('${ld.key}')"> <div class="log-hdr-left"> <span class="log-chevron${isOpen?' open':''}">&#9654;</span> <span class="log-title">${ld.title}</span> </div> <div style="display:flex;align-items:center;gap:8px"> <span class="log-count">${ld.entries.length}</span> <button class="copy-btn" onclick="copyLog('${ld.key}',event)">Copy</button> </div> </div> ${body} </div>`;
+}).join(’’);
+
+// Summary counts
+const smry={
+vehicles:total,
+invalidZones:al.step1.length,
+pdi:al.logs.pdi.length,
+fullDetail:al.logs.detail.filter(e=>e.type===‘Full detail’).length,
+quickRinse:al.logs.detail.filter(e=>e.type===‘Quick rinse’).length,
+stockTag:al.logs.stockTag.length,
+inRecon:al.logs.inRecon.length,
+};
+
+return `<div class="screen">
+<div class="hdr">
+<div class="hdr-left">
+<div class="hdr-title">Action List</div>
+<div class="hdr-sub">${ds} · ${total} vehicles · <strong style="color:var(--accent)">${left} left</strong></div>
+</div>
+<div class="hdr-right">
+<button class="icon-btn" onclick="confirmStartNew()" title="New Audit" style="font-size:14px;">+ New</button>
+<button class="icon-btn" onclick="showSettings()">⚙</button>
+</div>
+</div>
+
+```
+<div class="content pb-safe">
+  <button class="btn btn-secondary" onclick="downloadSessionMd()" style="margin-bottom:14px;">↓ Download Session Summary</button>
+  ${step1Html}
+  <div class="sec-label" style="margin-top:4px">Step 2 — By Zone</div>
+  ${zonesHtml}
+  <div class="divider"></div>
+  <div class="sec-label">Review Logs</div>
+  ${logsHtml}
+  <div class="divider"></div>
+  <div class="sec-label">Session Summary</div>
+  <div class="summary-card">
+    <div class="srow"><span>Total vehicles</span><span class="sval">${smry.vehicles}</span></div>
+    <div class="srow"><span>Invalid zones</span><span class="sval${smry.invalidZones?' err':''}">${smry.invalidZones}</span></div>
+    <div class="srow"><span>PDI incomplete</span><span class="sval">${smry.pdi}</span></div>
+    <div class="srow"><span>Full detail needed</span><span class="sval">${smry.fullDetail}</span></div>
+    <div class="srow"><span>Quick rinse needed</span><span class="sval">${smry.quickRinse}</span></div>
+    <div class="srow"><span>Stock tag issues</span><span class="sval">${smry.stockTag}</span></div>
+    <div class="srow"><span>IN RECON flagged</span><span class="sval">${smry.inRecon}</span></div>
+  </div>
+
+  <div class="divider"></div>
+  <button class="btn btn-ghost" onclick="addMissedVehicle()">+ Add Missed Vehicle</button>
+</div>
+```
+
+  </div>`;
+}
+
+// ─── ACTION STATE ─────────────────────────────────────────────────────────────
+function toggleStep1(i){
+const key=‘step1_’+i;
+STATE.actionState[key]=!STATE.actionState[key];
+LS.set(‘action_state’,STATE.actionState);
+refreshActionsPartial();
+}
+
+function toggleAction(vehicleId, idx){
+const key=vehicleId+’*’+idx;
+STATE.actionState[key]=!STATE.actionState[key];
+LS.set(‘action_state’,STATE.actionState);
+// Update just the checkbox and text
+const item=document.querySelectorAll(`#vcard_${vehicleId} .action-item`)[idx];
+if(item){
+const chk=item.querySelector(’.achk’);
+const txt=item.querySelector(’.atxt’);
+const chkd=STATE.actionState[key];
+chk.className=‘achk’+(chkd?’ chkd’:’’);
+chk.textContent=chkd?‘✓’:’’;
+txt.className=‘atxt’+(chkd?’ done’:’’);
+// Update card dim state
+const card=document.getElementById(’vcard*’+vehicleId);
+const al=STATE.actionList;
+const vData=al.zones.cage.concat(al.zones.east,al.zones.west).find(v=>v.id===vehicleId);
+if(card&&vData){
+const allDone=vData.actions.every((*,i2)=>STATE.actionState[vehicleId+’*’+i2]);
+card.className=‘vcard’+(allDone?’ all-done’:’’);
+}
+}
+// Update zone badge
+const al=STATE.actionList;
+[‘cage’,‘east’,‘west’].forEach(zk=>{
+const badge=document.getElementById(‘zbadge_’+zk);
+if(!badge) return;
+const remaining=(al.zones[zk]||[]).reduce((s,v)=>s+v.actions.filter((*,i2)=>!STATE.actionState[v.id+’*’+i2]).length,0);
+badge.textContent=remaining;
+badge.className=‘zone-badge’+(remaining===0?’ zero’:’’);
+});
+// Update header count
+const sub=document.querySelector(’.hdr-sub strong’);
+if(sub) sub.textContent=countLeft()+’ left’;
+}
+
+function toggleZone(zk){
+if(STATE.collapsedZones.has(zk)) STATE.collapsedZones.delete(zk); else STATE.collapsedZones.add(zk);
+// Re-render zone block
+const el=document.getElementById(‘zb_’+zk);
+if(!el) return;
+const al=STATE.actionList;
+const zvehicles=al.zones[zk]||[];
+const remaining=zvehicles.reduce((sum,v)=>sum+v.actions.filter((*,i)=>!STATE.actionState[v.id+’*’+i]).length,0);
+const isCollapsed=STATE.collapsedZones.has(zk);
+const zoneNames={cage:‘CAGE’,east:‘EAST SIDE FENCE’,west:‘WEST SIDE OF BUILDING’};
+const vcards=zvehicles.map(v=>{
+const allDone=v.actions.every((*,i)=>STATE.actionState[v.id+’*’+i]);
+const items=v.actions.map((a,i)=>{
+const chkd=STATE.actionState[v.id+’_’+i];
+return `<div class="action-item"><div class="achk${chkd?' chkd':''}" onclick="toggleAction('${v.id}',${i})">${chkd?'✓':''}</div><div class="atxt${chkd?' done':''}">${esc(a)}</div></div>`;
+}).join(’’);
+return `<div class="vcard${allDone?' all-done':''}" id="vcard_${v.id}"><div class="vcard-hdr"><span class="vcard-vin">${esc(v.vin)}</span><span class="vcard-status">${esc(v.status)}</span></div>${items}</div>`;
+}).join(’’);
+el.innerHTML=`<div class="zone-hdr" onclick="toggleZone('${zk}')">
+<div class="zone-hdr-left"><span class="zone-chevron${isCollapsed?'':' open'}">▶</span><span class="zone-name">${zoneNames[zk]}</span></div>
+<span class="zone-badge${remaining===0?' zero':''}" id="zbadge_${zk}">${remaining}</span>
+
+  </div>
+  ${isCollapsed?'':`<div class="zone-body" id="zbody_${zk}">${vcards}</div>`}`;
+}
+
+function toggleLog(key){
+if(STATE.expandedLogs.has(key)) STATE.expandedLogs.delete(key); else STATE.expandedLogs.add(key);
+render(‘actions’);
+}
+
+function refreshActionsPartial(){ render(‘actions’); }
+
+function copyLog(type, e){
+if(e){ e.stopPropagation(); e.preventDefault(); }
+const al=STATE.actionList;
+const ds=fmtDateShort(STATE.session.date);
+const full=new Date(STATE.session.date).toLocaleDateString(‘en-CA’,{month:‘long’,day:‘numeric’,year:‘numeric’});
+let text=’’;
+if(type===‘inRecon’){
+text=`IN RECON Review — ${full}\n`+al.logs.inRecon.map(e=>`· ${e.vin} — ${e.zone}${e.notes?' — '+e.notes:''}`).join(’\n’);
+} else if(type===‘pdi’){
+text=`PDI Incomplete — Tape Found — ${full}\n`+al.logs.pdi.map(e=>`· ${e.vin} — ${e.zone}`).join(’\n’);
+} else if(type===‘stockTag’){
+text=`Stock-In Tag Issues — ${full}\n`+al.logs.stockTag.map(e=>`· ${e.vin} — ${e.issue}`).join(’\n’);
+} else if(type===‘detail’){
+text=`Detail / Rinse Required — ${full}\n`+al.logs.detail.map(e=>`· ${e.vin} — ${e.type} (${e.reason})`).join(’\n’);
+}
+navigator.clipboard.writeText(text).then(()=>toast(‘Copied — paste into WhatsApp ✓’,‘ok’)).catch(()=>{
+prompt(‘Copy this text:’,text);
+});
+}
+
+function addMissedVehicle(){
+render(‘entry’);
+setTimeout(()=>{ const vi=document.getElementById(‘vinInput’); if(vi) vi.focus(); },100);
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+function startAudit(){
+const id=genSessionId();
+STATE.session={id, date:new Date().toISOString(), status:‘audit’};
+STATE.vehicles=[];
+STATE.currentVehicle=null;
+STATE.actionList=null;
+STATE.actionState={};
+STATE.expandedSections=new Set();
+STATE.showNote=new Set();
+LS.clearAll();
+saveState();
+render(‘entry’);
+setTimeout(()=>{ const vi=document.getElementById(‘vinInput’); if(vi) vi.focus(); },100);
+}
+
+function confirmStartNew(){
+modal({
+title:‘Start New Audit?’,
+body:‘This will <strong>clear your current session</strong> and all vehicle data for today. Are you sure?’,
+actions:[
+{label:‘Cancel’, cls:‘btn-ghost’},
+{label:‘Clear & Start New’, cls:‘btn-danger’, cb:()=>{ LS.clearAll(); STATE.session=null; STATE.vehicles=[]; STATE.currentVehicle=null; STATE.actionList=null; STATE.actionState={}; render(‘start’); }},
+]
+});
+}
+
+function beginChecklist(){
+const vi=document.getElementById(‘vinInput’);
+const vin=vi?vi.value.trim().toUpperCase():’’;
+if(vin.length!==6){ toast(‘Enter exactly 6 characters’,‘warn’); return; }
+
+// Check for duplicate
+const dup=STATE.vehicles.find(v=>v.vin===vin);
+if(dup){
+const answeredSections=Object.entries(dup.sections||{}).filter(([k,v])=>v&&v.value).map(([k,v])=>`${SDEFS[k]?SDEFS[k].title:k}: ${v.label||v.value}`).join(’, ’);
+modal({
+title:‘Duplicate VIN’,
+body:`<strong>${vin}</strong> was already audited this session.<br><br>Previous answers: ${answeredSections||'(none)'}<br><br>Re-audit this vehicle?`,
+actions:[
+{label:‘Cancel’, cls:‘btn-ghost’},
+{label:‘Re-audit’, cls:‘btn-primary’, cb:()=>startChecklist(vin)},
+]
+});
+return;
+}
+startChecklist(vin);
+}
+
+function startChecklist(vin){
+STATE.currentVehicle={
+id:genId(),
+vin:vin,
+inventory_status:’’,
+sections:{parking_zone:null,zone_match:null,in_recon_flag:null,stock_in_tag:null,sold_sign:null,customer_vehicle:null,tape_stickers:null,cleanliness_outside:null,cleanliness_inside:null,plastic_covers:null,facing_outward:null,door_spacing:null},
+sync_status:‘pending’,
+session_id:STATE.session?STATE.session.id:’’,
+};
+STATE.expandedSections=new Set();
+STATE.showNote=new Set();
+LS.set(‘current’,STATE.currentVehicle);
+render(‘checklist’);
+}
+
+function checklistBack(){
+modal({
+title:‘Abandon Checklist?’,
+body:‘Your progress for this vehicle will be saved as in-progress and restored when you return.’,
+actions:[
+{label:‘Keep Working’, cls:‘btn-ghost’},
+{label:‘Go Back’, cls:‘btn-secondary’, cb:()=>render(‘entry’)},
+]
+});
+}
+
+function resumeSession(){
+if(STATE.session&&STATE.session.status===‘action’) render(‘actions’);
+else render(‘entry’);
+}
+
+function reviewVehicle(id){
+const v=STATE.vehicles.find(x=>x.id===id);
+if(!v) return;
+const applicable=getApplicable(v);
+const rows=applicable.map(k=>{
+const sec=v.sections[k];
+const val=sec&&sec.value?(sec.value===‘other’?(sec.other||‘Other’):sec.label):’—’;
+return `<div class="rrow"><span class="rrow-label">${SDEFS[k].title}</span><span class="rrow-val">${esc(val)}</span></div>`;
+}).join(’’);
+modal({
+title:v.vin+’ — ’+v.inventory_status,
+body:`<div style="font-size:13px;">${rows}</div>`,
+actions:[
+{label:‘Close’, cls:‘btn-ghost’},
+{label:‘↓ Re-download’, cls:‘btn-secondary’, cb:()=>downloadVehicleMd(v)},
+]
+});
+}
+
+function redownload(id){
+const v=STATE.vehicles.find(x=>x.id===id);
+if(v) downloadVehicleMd(v);
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+function showSettings(){
+modal({
+title:‘Settings’,
+body:`High contrast mode for extreme sunlight.<br><span style="font-size:12px;color:var(--text-muted)">Session: ${STATE.session?STATE.session.id:'—'}</span>`,
+actions:[
+{label:STATE.highContrast?‘Disable High Contrast’:‘Enable High Contrast’, cls:‘btn-secondary’, cb:toggleContrast},
+{label:‘Close’, cls:‘btn-ghost’},
+]
+});
+}
+
+function toggleContrast(){
+STATE.highContrast=!STATE.highContrast;
+document.body.classList.toggle(‘hc’,STATE.highContrast);
+toast(STATE.highContrast?‘High contrast ON’:‘High contrast OFF’,‘ok’);
+}
+
+// ─── DOWNLOAD FUNCTIONS ───────────────────────────────────────────────────────
+function dlText(filename, content){
+const blob=new Blob([content],{type:‘text/plain;charset=utf-8’});
+const url=URL.createObjectURL(blob);
+const a=document.createElement(‘a’);
+a.href=url; a.download=filename; a.click();
+setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function downloadVehicleMd(v){
+const dt=new Date(v.submitted_at||Date.now());
+const dateStr=dt.toLocaleDateString(‘en-CA’,{year:‘numeric’,month:‘long’,day:‘numeric’});
+const timeStr=fmtTime(v.submitted_at);
+const applicable=getApplicable(v);
+
+const sectionLines=applicable.map((k,i)=>{
+const def=SDEFS[k];
+const sec=v.sections[k];
+if(!sec||!sec.value) return `**${i+1}. ${def.title}**\n— (not answered)`;
+const val=sec.value===‘other’?(sec.other||‘Other’):sec.label;
+const extra=[];
+if(k===‘parking_zone’&&!VALID_ZONES.includes(sec.value)) extra.push(‘⚠ INVALID ZONE’);
+if(k===‘zone_match’&&sec.value===‘no’) extra.push(’→ Should be: ’+(sec.subValue||correctZone(v.inventory_status)));
+if(sec.notes) extra.push(‘Note: ‘+sec.notes);
+const photoCount=(LS.get(‘photos’)||{})[v.id]?(Object.values((LS.get(‘photos’)||{})[v.id]).reduce((s,a)=>s+a.length,0)):0;
+return `**${i+1}. ${def.title}**\n${val}${extra.length?'\n'+extra.join('\n'):''}`;
+}).join(’\n\n’);
+
+const actions=deriveActionsForVehicle(v);
+const actionLines=actions.length?actions.map(a=>`- [ ] ${a}`).join(’\n’):’*(none)*’;
+
+const allNotes=applicable.map(k=>v.sections[k]&&v.sections[k].notes?`${SDEFS[k].title}: ${v.sections[k].notes}`:’’).filter(Boolean).join(’\n’);
+
+const content=[
+`# Vehicle Audit — ${v.vin}`,
+`, `**Session:** ${v.session_id||'—'}  `, `**Date:** ${dateStr}  `, `**Submitted:** ${timeStr}  `, `,
+`---`,
+`, `## Inventory Status`, v.inventory_status||'(not set)', `,
+`---`,
+`, `## Checklist`, `,
+sectionLines,
+`, `---`, `,
+`## Action Items`,
+`, actionLines, `,
+`---`,
+`, `## Notes`, `,
+allNotes||’*(none)*’,
+`, `---`, `,
+`*Generated by Lot Walk App — Sturgeon Dodge*`,
+].join(’\n’);
+
+const dateTag=dt.toISOString().slice(0,10).replace(/-/g,’’);
+dlText(`lot-walk-${v.vin}-${dateTag}.txt`, content);
+toast(`Downloaded: lot-walk-${v.vin}.txt ✓`,‘ok’);
+}
+
+function deriveActionsForVehicle(v){
+const actions=[];
+const s=v.sections;
+const pz=s.parking_zone;
+const isValid=pz&&VALID_ZONES.includes(pz.value);
+if(!isValid&&pz) actions.push(’MOVE: currently in ‘+pz.label+’ → ’+correctZone(v.inventory_status));
+if(s.zone_match&&s.zone_match.value===‘no’) actions.push(’Move to: ’+(s.zone_match.subValue||correctZone(v.inventory_status)));
+if(s.tape_stickers&&s.tape_stickers.value===‘present’) actions.push(‘Remove tape/stickers — PDI not complete’);
+const dirtyIn=s.cleanliness_inside&&s.cleanliness_inside.value===‘dirty’;
+const dirtyOut=s.cleanliness_outside&&s.cleanliness_outside.value===‘dirty’;
+const isAvail=v.inventory_status===‘AVAILABLE’;
+if(dirtyIn) actions.push(‘Full detail — DHD (dirty inside)’);
+else if(dirtyOut&&isAvail) actions.push(‘Quick rinse — Hughes’);
+else if(dirtyOut&&!isAvail) actions.push(‘Full detail — DHD (dirty outside, non-AVAILABLE)’);
+if(s.plastic_covers&&s.plastic_covers.value===‘present’) actions.push(‘Remove plastic covers from interior’);
+if(s.stock_in_tag&&s.stock_in_tag.value===‘missing’) actions.push(‘Stock-in tag: get from Jorja/Giselle → bottom-right windshield’);
+if(s.stock_in_tag&&s.stock_in_tag.value===‘misplaced’) actions.push(‘Stock-in tag: reposition to bottom-right windshield’);
+if(s.sold_sign&&s.sold_sign.value===‘missing’) actions.push(‘Sold sign: get from upstairs, write customer name’);
+if(s.sold_sign&&s.sold_sign.value===‘present_unnamed’) actions.push(‘Sold sign: write customer name’);
+if(s.facing_outward&&s.facing_outward.value===‘no’) actions.push(‘Reposition vehicle to face outward’);
+if(s.door_spacing&&s.door_spacing.value===‘insufficient’) actions.push(‘Adjust door-opening spacing’);
+if(s.customer_vehicle&&s.customer_vehicle.value===‘unknown’) actions.push(‘Clarify vehicle identity before any action’);
+return actions;
+}
+
+function downloadSessionMd(){
+const al=STATE.actionList;
+const s=STATE.session;
+if(!al){ toast(‘No action list generated yet’,‘warn’); return; }
+const dt=new Date();
+const dateStr=dt.toLocaleDateString(‘en-CA’,{weekday:‘long’,month:‘long’,day:‘numeric’,year:‘numeric’});
+const timeStr=fmtTime(dt.toISOString());
+const total=STATE.vehicles.length;
+
+// Step 1
+const step1Lines=al.step1.length
+?al.step1.map(v=>`- **${v.vin}** (${v.status}) | Currently: ${v.currentZone} → Move to: **${v.moveTo}**`).join(’\n’)
+:’*(none)*’;
+
+// Step 2 zones
+const zoneNames={cage:‘CAGE’,east:‘EAST SIDE FENCE’,west:‘WEST SIDE OF BUILDING’};
+const step2Lines=[‘cage’,‘east’,‘west’].map(zk=>{
+const zvs=al.zones[zk];
+if(!zvs||!zvs.length) return ‘’;
+const vlines=zvs.map(v=>`**${v.vin}** — ${v.status}\n${v.actions.map(a=>`- [ ] ${a}`).join('\n')}`).join(’\n\n’);
+return `### ${zoneNames[zk]}\n\n${vlines}`;
+}).filter(Boolean).join(’\n\n—\n\n’);
+
+// Logs
+const inReconLines=al.logs.inRecon.map(e=>`- **${e.vin}** | Zone: ${e.zone}${e.notes?' | Notes: '+e.notes:''}`).join(’\n’)||’*(none)*’;
+const pdiLines=al.logs.pdi.map(e=>`- **${e.vin}** | Zone: ${e.zone}`).join(’\n’)||’*(none)*’;
+const stockLines=al.logs.stockTag.map(e=>`- **${e.vin}** | ${e.issue}`).join(’\n’)||’*(none)*’;
+const detailLines=al.logs.detail.map(e=>`- **${e.vin}** — ${e.type} (${e.reason})`).join(’\n’)||’*(none)*’;
+
+// Summary
+const fullDetail=al.logs.detail.filter(e=>e.type===‘Full detail’).length;
+const quickRinse=al.logs.detail.filter(e=>e.type===‘Quick rinse’).length;
+
+const content=[
+`# Lot Walk — Session Summary`,
+`, `**Session ID:** ${s.id}  `, `**Date:** ${dateStr}  `, `**Completed:** ${timeStr}  `, `**Total Vehicles:** ${total}  `, `,
+`---`,
+`, `## STEP 1 — Move First`, `Both people. Complete before Step 2.`, `,
+step1Lines,
+`, `---`, `,
+`## STEP 2 — Action Items by Zone`,
+`, step2Lines||'*(no action items)*', `,
+`---`,
+`, `## Review Logs`, `,
+`### IN RECON — Alex / Charlie Review`,
+inReconLines,
+`, `### PDI Incomplete — Tape Found`, pdiLines, `,
+`### Stock-In Tag Issues`,
+stockLines,
+`, `### Detail / Rinse Required`, detailLines, `,
+`---`,
+`, `## Summary`, `,
+`| Item | Count |`,
+`|------|-------|`,
+`| Total vehicles | ${total} |`,
+`| Invalid zones | ${al.step1.length} |`,
+`| PDI incomplete | ${al.logs.pdi.length} |`,
+`| Full detail needed | ${fullDetail} |`,
+`| Quick rinse needed | ${quickRinse} |`,
+`| Stock tag issues | ${al.logs.stockTag.length} |`,
+`| IN RECON flagged | ${al.logs.inRecon.length} |`,
+`, `---`, `,
+`*Generated by Lot Walk App — Sturgeon Dodge*`,
+].join(’\n’);
+
+const dateTag=new Date(s.date).toISOString().slice(0,10).replace(/-/g,’’);
+dlText(`lot-walk-session-${dateTag}-${s.id}.txt`, content);
+toast(‘Session summary downloaded ✓’,‘ok’);
+}
+
+// ─── ONLINE / OFFLINE ─────────────────────────────────────────────────────────
+function updateOnlineStatus(){
+STATE.online=navigator.onLine;
+const b=document.getElementById(‘offlineBanner’);
+if(b) b.classList.toggle(‘show’,!STATE.online);
+}
+window.addEventListener(‘online’,updateOnlineStatus);
+window.addEventListener(‘offline’,updateOnlineStatus);
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+function init(){
+updateOnlineStatus();
+loadState();
+
+// Clean up old photos (24h after session complete)
+if(STATE.session&&STATE.session.status===‘complete’){
+const completed=STATE.session.completedAt?new Date(STATE.session.completedAt):null;
+if(completed&&(Date.now()-completed.getTime()>86400000)) LS.rm(‘photos’);
+}
+
+if(!STATE.session){
+render(‘start’);
+return;
+}
+
+// Resume mid-checklist
+if(STATE.currentVehicle&&STATE.session.status===‘audit’){
+render(‘checklist’);
+return;
+}
+
+// Session in progress
+if(STATE.session.status===‘audit’||STATE.session.status===‘action’){
+render(‘resume’);
+return;
+}
+
+render(‘start’);
+}
+
+init();
+</script>
+
+</body>
+</html>
