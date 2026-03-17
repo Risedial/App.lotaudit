@@ -27,8 +27,8 @@
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
     body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:var(--fs-base);line-height:1.5;min-height:100vh;overflow-x:hidden;}
     #app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;}
-    .screen{min-height:100vh;animation:fadeIn 200ms ease;}
-    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .screen{min-height:100vh;animation:fadeIn 180ms ease-out;}
+    @keyframes fadeIn{from{transform:translateY(5px)}to{transform:translateY(0)}}
 
 ```
 /* Offline banner */
@@ -1592,17 +1592,19 @@ toast(‘Session summary downloaded ✓’,‘ok’);
 }
 
 // ─── ONLINE / OFFLINE ─────────────────────────────────────────────────────────
-function updateOnlineStatus(){
-STATE.online=navigator.onLine;
+window.addEventListener(‘online’,()=>{
+STATE.online=true;
 const b=document.getElementById(‘offlineBanner’);
-if(b) b.classList.toggle(‘show’,!STATE.online);
-}
-window.addEventListener(‘online’,updateOnlineStatus);
-window.addEventListener(‘offline’,updateOnlineStatus);
+if(b) b.classList.remove(‘show’);
+});
+window.addEventListener(‘offline’,()=>{
+STATE.online=false;
+const b=document.getElementById(‘offlineBanner’);
+if(b) b.classList.add(‘show’);
+});
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 function init(){
-updateOnlineStatus();
 loadState();
 
 // Clean up old photos (24h after session complete)
