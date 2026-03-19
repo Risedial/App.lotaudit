@@ -363,17 +363,6 @@ const SDEFS = {
       {l:'Other', v:'other', isOther:true},
     ],
   },
-  zone_match:{
-    title:'Zone Matches Inventory Status?', ctx:null, noteToggle:true,
-    photo:'conditional',
-    photoCondition: (v)=> v==='unclear',
-    opts:[
-      {l:'Yes — correct zone', v:'yes'},
-      {l:'No — should be in:', v:'no', hasSub:true},
-      {l:'Unclear — needs clarification', v:'unclear'},
-      {l:'Other', v:'other', isOther:true},
-    ],
-  },
   in_recon_flag:{
     title:'IN RECON Flag', ctx:null, photo:false, noteToggle:true,
     noteLabel:'Notes for Charlie:', noteAlwaysOpen:true,
@@ -402,27 +391,24 @@ const SDEFS = {
       {l:'Other', v:'other', isOther:true},
     ],
   },
-  customer_vehicle:{
-    title:'Customer / Bank Rep Vehicle', ctx:null, noteToggle:true,
-    photo:'conditional',
-    photoCondition:(v)=>v==='unknown',
+  windshield_tape:{
+    title:'New Windshield Tape present?', ctx:'Presence = PDI not complete', photo:false, noteToggle:true,
     opts:[
-      {l:'Confirmed stock unit — no action', v:'stock'},
-      {l:'Confirmed customer or bank rep vehicle — no action', v:'confirmed_customer'},
-      {l:'Unknown — needs clarification', v:'unknown'},
+      {l:'No', v:'no'},
+      {l:'Yes', v:'yes'},
       {l:'Other', v:'other', isOther:true},
     ],
   },
-  tape_stickers:{
-    title:'Tape / Stickers on Exterior', ctx:'Presence = PDI not complete', photo:true, noteToggle:true,
+  barcode_stickers:{
+    title:'Barcode Stickers present?', ctx:null, photo:false, noteToggle:true,
     opts:[
-      {l:'None — clear', v:'none'},
-      {l:'Present', v:'present'},
+      {l:'No', v:'no'},
+      {l:'Yes', v:'yes'},
       {l:'Other', v:'other', isOther:true},
     ],
   },
   cleanliness_outside:{
-    title:'Cleanliness — Outside', ctx:null, noteToggle:true,
+    title:'Outside Cleanliness', ctx:null, noteToggle:true,
     photo:'conditional',
     photoCondition:(v)=>v==='dirty',
     opts:[
@@ -432,7 +418,7 @@ const SDEFS = {
     ],
   },
   cleanliness_inside:{
-    title:'Cleanliness — Inside', ctx:null, noteToggle:true,
+    title:'Inside Cleanliness', ctx:null, noteToggle:true,
     photo:'conditional',
     photoCondition:(v)=>v==='dirty',
     opts:[
@@ -446,9 +432,8 @@ const SDEFS = {
     photo:'conditional',
     photoCondition:(v)=>v==='present',
     opts:[
-      {l:'Removed — clear', v:'removed'},
-      {l:'Still present', v:'present'},
-      {l:'Other', v:'other', isOther:true},
+      {l:'No Plastic', v:'removed'},
+      {l:'Yes Plastic', v:'present'},
     ],
   },
   facing_outward:{
@@ -459,17 +444,9 @@ const SDEFS = {
       {l:'Other', v:'other', isOther:true},
     ],
   },
-  door_spacing:{
-    title:'Door-Opening Spacing', ctx:null, photo:false, noteToggle:true,
-    opts:[
-      {l:'Adequate', v:'adequate'},
-      {l:'Insufficient — needs adjustment', v:'insufficient'},
-      {l:'Other', v:'other', isOther:true},
-    ],
-  },
 };
 
-const SORDER=['parking_zone','zone_match','in_recon_flag','stock_in_tag','sold_sign','customer_vehicle','tape_stickers','cleanliness_outside','cleanliness_inside','plastic_covers','facing_outward','door_spacing'];
+const SORDER=['parking_zone','in_recon_flag','stock_in_tag','sold_sign','windshield_tape','barcode_stickers','cleanliness_outside','cleanliness_inside','plastic_covers','facing_outward'];
 const VALID_ZONES=['cage','east_side_fence','west_side_building'];
 const STATUSES=['AVAILABLE','SIGNED DEAL','BOOKED | NOT DELIVERED','IN RECON','WHOLESALE','WHOLESALE | BOS'];
 
@@ -833,14 +810,8 @@ function selectOption(key, val, label){
   if(!v.sections[key]) v.sections[key]={};
   v.sections[key].value=val;
   v.sections[key].label=label;
-  // Auto-populate zone_match sub if 'no'
-  if(key==='zone_match'&&val==='no'&&!v.sections[key].subValue){
-    v.sections[key].subValue=correctZone(v.inventory_status);
-  }
   // Set in_recon flagged bool
   if(key==='in_recon_flag') v.sections[key].flagged=(val==='flagged');
-  // Set tape_stickers present bool
-  if(key==='tape_stickers') v.sections[key].present=(val==='present');
   LS.set('current',v);
 
   // Re-render section and review
@@ -848,18 +819,9 @@ function selectOption(key, val, label){
   refreshReview();
   updateHeaderProgress();
 
-  // After answering, collapse and scroll to next
+  // After answering, collapse section only — no scrolling
   if(val!=='other'){
     STATE.expandedSections.delete(key);
-    setTimeout(()=>{
-      const applicable=getApplicable(v);
-      const idx=applicable.indexOf(key);
-      if(idx<applicable.length-1){
-        const nextKey=applicable[idx+1];
-        const nextEl=document.getElementById('sb_'+nextKey);
-        if(nextEl) nextEl.scrollIntoView({behavior:'smooth',block:'start'});
-      }
-    },200);
   }
 }
 
@@ -1064,16 +1026,23 @@ function generateActionList(vehicles){
       step1.push({id:v.id,vin:v.vin,status:v.inventory_status,currentZone:pz?pz.label:'Unknown',moveTo:correctZone(v.inventory_status)});
     }
 
-    // Wrong zone but valid
-    if(s.zone_match&&s.zone_match.value==='no'&&isValid){
-      const dst=s.zone_match.subValue||correctZone(v.inventory_status);
-      actions.push('Move to: '+dst);
+    // Auto zone-match: if valid zone but wrong for this status, flag a move
+    if(isValid&&pz){
+      const expectedZone=correctZone(v.inventory_status);
+      const actualLabel=pz.label;
+      if(actualLabel!==expectedZone){
+        actions.push('Move to: '+expectedZone+' (wrong zone for status)');
+      }
     }
 
-    // Tape / PDI
-    if(s.tape_stickers&&s.tape_stickers.value==='present'){
-      actions.push('Remove tape/stickers — PDI not complete');
+    // Windshield tape / PDI
+    if(s.windshield_tape&&s.windshield_tape.value==='yes'){
+      actions.push('Remove windshield tape — PDI not complete');
       logs.pdi.push({vin:v.vin,zone:pz?pz.label:'Unknown'});
+    }
+    // Barcode stickers
+    if(s.barcode_stickers&&s.barcode_stickers.value==='yes'){
+      actions.push('Remove barcode stickers from exterior');
     }
 
     // Cleanliness
@@ -1116,11 +1085,6 @@ function generateActionList(vehicles){
     // Facing outward
     if(s.facing_outward&&s.facing_outward.value==='no') actions.push('Reposition vehicle to face outward');
 
-    // Door spacing
-    if(s.door_spacing&&s.door_spacing.value==='insufficient') actions.push('Adjust door-opening spacing');
-
-    // Customer vehicle unknown
-    if(s.customer_vehicle&&s.customer_vehicle.value==='unknown') actions.push('Clarify vehicle identity before any action');
 
     // IN RECON log
     if(s.in_recon_flag&&s.in_recon_flag.flagged){
@@ -1435,7 +1399,7 @@ function startChecklist(vin){
     id:genId(),
     vin:vin,
     inventory_status:'',
-    sections:{parking_zone:null,zone_match:null,in_recon_flag:null,stock_in_tag:null,sold_sign:null,customer_vehicle:null,tape_stickers:null,cleanliness_outside:null,cleanliness_inside:null,plastic_covers:null,facing_outward:null,door_spacing:null},
+    sections:{parking_zone:null,in_recon_flag:null,stock_in_tag:null,sold_sign:null,windshield_tape:null,barcode_stickers:null,cleanliness_outside:null,cleanliness_inside:null,plastic_covers:null,facing_outward:null},
     sync_status:'pending',
     session_id:STATE.session?STATE.session.id:'',
   };
@@ -1525,7 +1489,6 @@ function downloadVehicleMd(v){
     const val=sec.value==='other'?(sec.other||'Other'):sec.label;
     const extra=[];
     if(k==='parking_zone'&&!VALID_ZONES.includes(sec.value)) extra.push('⚠ INVALID ZONE');
-    if(k==='zone_match'&&sec.value==='no') extra.push('→ Should be: '+(sec.subValue||correctZone(v.inventory_status)));
     if(sec.notes) extra.push('Note: '+sec.notes);
     const photoCount=(LS.get('photos')||{})[v.id]?(Object.values((LS.get('photos')||{})[v.id]).reduce((s,a)=>s+a.length,0)):0;
     return `**${i+1}. ${def.title}**\n${val}${extra.length?'\n'+extra.join('\n'):''}`;
@@ -1582,8 +1545,9 @@ function deriveActionsForVehicle(v){
   const pz=s.parking_zone;
   const isValid=pz&&VALID_ZONES.includes(pz.value);
   if(!isValid&&pz) actions.push('MOVE: currently in '+pz.label+' → '+correctZone(v.inventory_status));
-  if(s.zone_match&&s.zone_match.value==='no') actions.push('Move to: '+(s.zone_match.subValue||correctZone(v.inventory_status)));
-  if(s.tape_stickers&&s.tape_stickers.value==='present') actions.push('Remove tape/stickers — PDI not complete');
+  if(isValid&&pz){ const expectedZone=correctZone(v.inventory_status); if(pz.label!==expectedZone) actions.push('Move to: '+expectedZone+' (wrong zone for status)'); }
+  if(s.windshield_tape&&s.windshield_tape.value==='yes') actions.push('Remove windshield tape — PDI not complete');
+  if(s.barcode_stickers&&s.barcode_stickers.value==='yes') actions.push('Remove barcode stickers from exterior');
   const dirtyIn=s.cleanliness_inside&&s.cleanliness_inside.value==='dirty';
   const dirtyOut=s.cleanliness_outside&&s.cleanliness_outside.value==='dirty';
   const isAvail=v.inventory_status==='AVAILABLE';
@@ -1596,8 +1560,6 @@ function deriveActionsForVehicle(v){
   if(s.sold_sign&&s.sold_sign.value==='missing') actions.push('Sold sign: get from upstairs, write customer name');
   if(s.sold_sign&&s.sold_sign.value==='present_unnamed') actions.push('Sold sign: write customer name');
   if(s.facing_outward&&s.facing_outward.value==='no') actions.push('Reposition vehicle to face outward');
-  if(s.door_spacing&&s.door_spacing.value==='insufficient') actions.push('Adjust door-opening spacing');
-  if(s.customer_vehicle&&s.customer_vehicle.value==='unknown') actions.push('Clarify vehicle identity before any action');
   return actions;
 }
 
